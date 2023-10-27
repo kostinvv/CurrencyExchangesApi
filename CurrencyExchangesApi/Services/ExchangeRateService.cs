@@ -69,14 +69,27 @@ namespace CurrencyExchangesApi.Services
             };
         }
 
-        public async Task<ExchangeRate> UpdateExchangeRate(string codePair, EditExchageRate editDto)
+        public async Task<Response<ExchangeRate>> UpdateExchangeRate(string codePair, EditExchageRate editDto)
         {
             var currentCode = codePair[..^3];
             var targetCode = codePair[3..];
 
+            var exchangeRate = await _exchangeRepository.Get(currentCode, targetCode);
+
+            if (exchangeRate == null)
+            {
+                return new Response<ExchangeRate>()
+                {
+                    Status = ServiceStatus.NotFound,
+                };
+            }
+
             await _exchangeRepository.Update(currentCode, targetCode, editDto.Rate);
 
-            return await _exchangeRepository.Get(currentCode, targetCode);
+            return new Response<ExchangeRate>()
+            {
+                Data = await _exchangeRepository.Get(currentCode, targetCode),
+            };
         }
     }
 }

@@ -90,9 +90,19 @@ namespace CurrencyExchangesApi.Controllers
         {
             try
             {
-                var exchangeRate = await _service.UpdateExchangeRate(codePair, editDto);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest();
+                }
 
-                return Ok(exchangeRate);
+                var response = await _service.UpdateExchangeRate(codePair, editDto);
+
+                if (response.Status == ServiceStatus.NotFound)
+                {
+                    return NotFound();
+                }
+
+                return Ok(response.Data);
             }
             catch (Exception)
             {
