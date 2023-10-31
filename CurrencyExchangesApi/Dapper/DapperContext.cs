@@ -17,9 +17,7 @@ namespace CurrencyExchangesApi.Dapper
         {
             var connectionString = _configuration.GetConnectionString(NAME);
 
-            var dbPath = connectionString!.Replace("|WorkingDirectory|", Directory.GetCurrentDirectory());
-
-            return new SQLiteConnection(dbPath);
+            return new SQLiteConnection(connectionString);
         }
     }
 }
