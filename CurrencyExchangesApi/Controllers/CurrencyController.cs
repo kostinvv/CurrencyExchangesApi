@@ -1,5 +1,6 @@
 ﻿using CurrencyExchangesApi.DTOs;
 using CurrencyExchangesApi.Enums;
+using CurrencyExchangesApi.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CurrencyExchangesApi.Controllers
@@ -18,66 +19,60 @@ namespace CurrencyExchangesApi.Controllers
         [HttpGet("currencies")]
         public async Task<IActionResult> Get() 
         {
-            try
-            {
-                var currencies = await _service.GetCurrencies();
+            var response = await _service.GetCurrencies();
 
-                return Ok(currencies);
-            }
-            catch (Exception)
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            return Ok(response.Data);
         }
 
         [HttpGet("currency/code")]
         public async Task<IActionResult> Get(string code)
         {
-            try
+            if (code.Length != 3)
             {
-                if (code.Length != 3)
-                {
-                    return BadRequest();
-                }
-
-                var currency = await _service.GetCurrency(code);
-
-                if (currency == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(currency);
+                return BadRequest();
             }
-            catch
+
+            var response = await _service.GetCurrency(code);
+
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            if (response.Data == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response.Data);
         }
 
         [HttpPost("currencies")]
         public async Task<IActionResult> Create([FromBody] CreateCurrency currencyDto)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest();
-                }
-
-                var response = await _service.CreateCurrency(currencyDto);
-
-                if (response.Status == ServiceStatus.Conflict)
-                {
-                    return Conflict(response.Message);
-                }
-
-                return Ok(response.Data);
+                return BadRequest();
             }
-            catch
+
+            var response = await _service.CreateCurrency(currencyDto);
+
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            if (response.Status == ServiceStatus.Conflict)
+            {
+                return Conflict(new { message = response.Message });
+            }
+
+            return Ok(response.Data);
         }
     }
 }

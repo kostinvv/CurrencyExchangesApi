@@ -16,80 +16,132 @@ namespace CurrencyExchangesApi.Services
             _currencyRepository = currenciesRepository;
         }
 
-        public async Task<IEnumerable<ExchangeRate>> GetExchangeRates()
+        public async Task<Response<IEnumerable<ExchangeRate>>> GetExchangeRates()
         {
-            var exchangeRates = await _exchangeRepository.Get();
+            try
+            {
+                var exchangeRates = await _exchangeRepository.Get();
 
-            return exchangeRates;
+                return new Response<IEnumerable<ExchangeRate>>()
+                {
+                    Data = exchangeRates,
+                    Status = ServiceStatus.Success,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Response<IEnumerable<ExchangeRate>>()
+                {
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
+                };
+            }
         }
 
-        public async Task<ExchangeRate> GetExchangeRate(string codePair)
+        public async Task<Response<ExchangeRate>> GetExchangeRate(string codePair)
         {
             var currentCode = codePair[..^3];
             var targetCode = codePair[3..];
 
-            var exchangeRate = await _exchangeRepository.Get(currentCode, targetCode);
+            try
+            {
+                var exchangeRate = await _exchangeRepository.Get(currentCode, targetCode);
 
-            return exchangeRate;
+                return new Response<ExchangeRate>()
+                {
+                    Data = exchangeRate,
+                    Status = ServiceStatus.Success,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Response<ExchangeRate>()
+                {
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
+                };
+            }
         }
 
         public async Task<Response<ExchangeRate>> CreateExchangeRate(CreateExchangeRate createDto)
         {
-            var exchangeRate = await _exchangeRepository.Get(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode);
+            try
+            {
+                var exchangeRate = await _exchangeRepository.Get(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode);
 
-            if (exchangeRate != null)
+                if (exchangeRate != null)
+                {
+                    return new Response<ExchangeRate>()
+                    {
+                        Status = ServiceStatus.Conflict,
+                    };
+                }
+
+                var baseCurrency = await _currencyRepository.Get(createDto.BaseCurrencyCode);
+
+                var targetCurrency = await _currencyRepository.Get(createDto.TargetCurrencyCode);
+
+                if (baseCurrency == null || targetCurrency == null)
+                {
+                    return new Response<ExchangeRate>()
+                    {
+                        Message = $"Currency by code {createDto.BaseCurrencyCode} or {createDto.TargetCurrencyCode} not found.",
+                        Status = ServiceStatus.NotFound,
+                    };
+                }
+
+                await _exchangeRepository.Insert(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode, createDto.Rate);
+
+                var createdExchangeRate = await _exchangeRepository.Get(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode);
+
+                return new Response<ExchangeRate>()
+                {
+                    Data = createdExchangeRate,
+                    Status = ServiceStatus.Success,
+                };
+            }
+            catch (Exception ex)
             {
                 return new Response<ExchangeRate>()
                 {
-                    Status = ServiceStatus.Conflict,
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
                 };
             }
-
-            var baseCurrency = await _currencyRepository.Get(createDto.BaseCurrencyCode);
-
-            var targetCurrency = await _currencyRepository.Get(createDto.TargetCurrencyCode);
-
-            if (baseCurrency == null || targetCurrency == null)
-            {
-                return new Response<ExchangeRate>()
-                {
-                    Message = $"Currency by code {createDto.BaseCurrencyCode} or {createDto.TargetCurrencyCode} not found.",
-                    Status = ServiceStatus.NotFound,
-                };
-            }
-
-            await _exchangeRepository.Insert(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode, createDto.Rate);
-
-            var createdExchangeRate = await _exchangeRepository.Get(createDto.BaseCurrencyCode, createDto.TargetCurrencyCode);
-
-            return new Response<ExchangeRate>()
-            {
-                Data = createdExchangeRate,
-                Status = ServiceStatus.Success,
-            };
         }
 
         public async Task<Response<ExchangeRate>> UpdateExchangeRate(string codePair, EditExchageRate editDto)
         {
-            var currentCode = codePair[..^3];
-            var targetCode = codePair[3..];
+            try
+            {
+                var currentCode = codePair[..^3];
+                var targetCode = codePair[3..];
 
-            var exchangeRate = await _exchangeRepository.Get(currentCode, targetCode);
+                var exchangeRate = await _exchangeRepository.Get(currentCode, targetCode);
 
-            if (exchangeRate == null)
+                if (exchangeRate == null)
+                {
+                    return new Response<ExchangeRate>()
+                    {
+                        Status = ServiceStatus.NotFound,
+                    };
+                }
+
+                await _exchangeRepository.Update(currentCode, targetCode, editDto.Rate);
+
+                return new Response<ExchangeRate>()
+                {
+                    Data = await _exchangeRepository.Get(currentCode, targetCode),
+                };
+            }
+            catch (Exception ex)
             {
                 return new Response<ExchangeRate>()
                 {
-                    Status = ServiceStatus.NotFound,
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
                 };
             }
-
-            await _exchangeRepository.Update(currentCode, targetCode, editDto.Rate);
-
-            return new Response<ExchangeRate>()
-            {
-                Data = await _exchangeRepository.Get(currentCode, targetCode),
-            };
         }
     }
 }

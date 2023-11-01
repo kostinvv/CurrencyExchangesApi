@@ -14,48 +14,90 @@ namespace CurrencyExchangesApi.Services
             _repository = repository;
         }
 
-        public async Task<Currency> GetCurrency(string code)
+        public async Task<Response<Currency>> GetCurrency(string code)
         {
-            var currency = await _repository.Get(code);
+            try
+            {
+                var currency = await _repository.Get(code);
 
-            return currency;
+                return new Response<Currency>()
+                {
+                    Data = currency,
+                    Status = ServiceStatus.Success,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Response<Currency>()
+                {
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
+                };
+            }
+
         }
 
-        public async Task<IEnumerable<Currency>> GetCurrencies()
+        public async Task<Response<IEnumerable<Currency>>> GetCurrencies()
         {
-            var currencies = await _repository.Get();
+            try
+            {
+                var currencies = await _repository.Get();
 
-            return currencies;
+                return new Response<IEnumerable<Currency>>()
+                {
+                    Data = currencies,
+                    Status = ServiceStatus.Success,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Response<IEnumerable<Currency>>()
+                {
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
+                };
+            }
         }
 
         public async Task<Response<Currency>> CreateCurrency(CreateCurrency currencyDto)
         {
-            var currency = await _repository.Get(currencyDto.Code);
-
-            if (currency != null)
+            try
             {
-                return new Response<Currency>() 
-                { 
-                    Status = ServiceStatus.Conflict,
+                var currency = await _repository.Get(currencyDto.Code);
+
+                if (currency != null)
+                {
+                    return new Response<Currency>()
+                    {
+                        Status = ServiceStatus.Conflict,
+                    };
+                }
+
+                var newCurrency = new Currency
+                {
+                    Code = currencyDto.Code,
+                    FullName = currencyDto.FullName,
+                    Sign = currencyDto.Sign,
+                };
+
+                await _repository.Insert(newCurrency);
+
+                var createdСurrency = await _repository.Get(newCurrency.Code);
+
+                return new Response<Currency>()
+                {
+                    Data = createdСurrency,
+                    Status = ServiceStatus.Success,
                 };
             }
-
-            var newCurrency = new Currency
+            catch (Exception ex)
             {
-                Code = currencyDto.Code,
-                FullName = currencyDto.FullName,
-                Sign = currencyDto.Sign,
-            };
-
-            await _repository.Insert(newCurrency);
-
-            var createdСurrency = await _repository.Get(newCurrency.Code);
-
-            return new Response<Currency>()
-            {
-                Data = createdСurrency,
-                Status = ServiceStatus.Success,
-            };
+                return new Response<Currency>()
+                {
+                    Status = ServiceStatus.ServerError,
+                    Message = ex.Message,
+                };
+            }
         }
     }
 }

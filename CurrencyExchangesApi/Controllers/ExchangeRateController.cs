@@ -18,96 +18,88 @@ namespace CurrencyExchangesApi.Controllers
         [HttpGet("exchangeRates")]
         public async Task<IActionResult> Get()
         {
-            try
-            {
-                var exchangeRates = await _service.GetExchangeRates();
+            var response = await _service.GetExchangeRates();
 
-                return Ok(exchangeRates);
-            }
-            catch (Exception)
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            return Ok(response.Data);
         }
 
         [HttpGet("exchangeRates/codePair")]
         public async Task<IActionResult> Get(string codePair)
         {
-            try
+            if (codePair.Length != 6)
             {
-                if (codePair.Length != 6)
-                {
-                    return BadRequest();
-                }
-
-                var exchangeRates = await _service.GetExchangeRate(codePair);
-
-                if (exchangeRates == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(exchangeRates);
+                return BadRequest();
             }
-            catch (Exception)
+
+            var response = await _service.GetExchangeRate(codePair);
+
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            if (response.Data == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(response.Data);
         }
 
         [HttpPost("exchangeRates")]
         public async Task<IActionResult> Create([FromBody] CreateExchangeRate createDto)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest();
-                }
-
-                var response = await _service.CreateExchangeRate(createDto);
-
-                if (response.Status == ServiceStatus.Conflict)
-                {
-                    return Conflict();
-                }
-
-                if (response.Status == ServiceStatus.NotFound)
-                {
-                    return NotFound( new { response.Message, response.Status } );
-                }
-
-                return Ok(response.Data);
+                return BadRequest();
             }
-            catch (Exception)
+
+            var response = await _service.CreateExchangeRate(createDto);
+
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            if (response.Status == ServiceStatus.Conflict)
+            {
+                return Conflict();
+            }
+
+            if (response.Status == ServiceStatus.NotFound)
+            {
+                return NotFound( new { response.Message, response.Status } );
+            }
+
+            return Ok(response.Data);
         }
 
         [HttpPatch("exchangeRate/codePair")]
         public async Task<IActionResult> Update(string codePair, [FromBody] EditExchageRate editDto)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest();
-                }
-
-                var response = await _service.UpdateExchangeRate(codePair, editDto);
-
-                if (response.Status == ServiceStatus.NotFound)
-                {
-                    return NotFound();
-                }
-
-                return Ok(response.Data);
+                return BadRequest();
             }
-            catch (Exception)
+
+            var response = await _service.UpdateExchangeRate(codePair, editDto);
+
+            if (response.Status == ServiceStatus.ServerError)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
             }
+
+            if (response.Status == ServiceStatus.NotFound)
+            {
+                return NotFound();
+            }
+
+            return Ok(response.Data);
         }
     }
 }
