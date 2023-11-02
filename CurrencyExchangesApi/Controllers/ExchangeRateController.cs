@@ -101,5 +101,28 @@ namespace CurrencyExchangesApi.Controllers
 
             return Ok(response.Data);
         }
+
+        [HttpGet("exchange")]
+        public async Task<IActionResult> Get(string baseCurrencyCode, string targetCurrencyCode, decimal amount)
+        {
+            if (baseCurrencyCode.Length != 3 || targetCurrencyCode.Length != 3)
+            {
+                return BadRequest();
+            }
+
+            var response = await _service.GetCurrencyExchange(baseCurrencyCode, targetCurrencyCode, amount);
+
+            if (response.Status == ServiceStatus.ServerError)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = response.Message });
+            }
+
+            if (response.Status == ServiceStatus.NotFound)
+            {
+                return NotFound();
+            }
+
+            return Ok(response.Data);
+        }
     }
 }
