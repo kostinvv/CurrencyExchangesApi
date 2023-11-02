@@ -1,6 +1,4 @@
-﻿using CurrencyExchangesApi.Dapper;
-using CurrencyExchangesApi.Models;
-using CurrencyExchangesApi.Repositories.Interfaces;
+﻿using CurrencyExchangesApi.Models;
 using Dapper;
 
 namespace CurrencyExchangesApi.Repositories
@@ -9,11 +7,6 @@ namespace CurrencyExchangesApi.Repositories
     {
         private readonly DapperContext _context;
 
-        private const string SELECT_CURRENCY = "SELECT * FROM Currencies";
-        private const string SELECT_CURRENCIES = "SELECT * FROM Currencies WHERE Code = @Code";
-        private const string INSERT_CURRENCY = "INSERT INTO Currencies (Code, FullName, Sign) " +
-            "VALUES (@Code, @FullName, @Sign)";
-
         public CurrenciesRepository(DapperContext context)
         {
             _context = context;
@@ -21,12 +14,12 @@ namespace CurrencyExchangesApi.Repositories
 
         public async Task<Currency> Get(string code)
         {
-            var parametr = new { Code = code };
+            var query = "SELECT * FROM Currencies WHERE Code = @Code";
 
             using (var connection = _context.CreateSqliteConnection())
             {
                 var currency = await connection
-                    .QueryFirstOrDefaultAsync<Currency>(SELECT_CURRENCIES, parametr);
+                    .QueryFirstOrDefaultAsync<Currency>(query, new { Code = code });
 
                 return currency!;
             }
@@ -34,9 +27,11 @@ namespace CurrencyExchangesApi.Repositories
 
         public async Task<IEnumerable<Currency>> Get()
         {
+            var query = "SELECT * FROM Currencies";
+
             using (var connection = _context.CreateSqliteConnection())
             {
-                var currencies = await connection.QueryAsync<Currency>(SELECT_CURRENCY);
+                var currencies = await connection.QueryAsync<Currency>(query);
 
                 return currencies;
             }
@@ -44,16 +39,16 @@ namespace CurrencyExchangesApi.Repositories
 
         public async Task Insert(Currency currency)
         {
-            var parameters = new
-            {
-                Code = currency.Code,
-                FullName = currency.FullName,
-                Sign = currency.Sign,
-            };
+            var query = @"
+                INSERT INTO Currencies (Code, FullName, Sign) 
+                VALUES (@Code, @FullName, @Sign)
+            ";
+
+            var parametrs = new { currency.Code, currency.FullName, currency.Sign };
 
             using (var connection = _context.CreateSqliteConnection())
             {
-                await connection.QueryAsync<Currency>(INSERT_CURRENCY, parameters);
+                await connection.QueryAsync<Currency>(query, parametrs);
             }
         }
     }

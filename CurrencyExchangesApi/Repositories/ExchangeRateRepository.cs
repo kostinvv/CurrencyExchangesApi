@@ -8,32 +8,63 @@ namespace CurrencyExchangesApi.Repositories
     {
         private readonly DapperContext _context;
 
-        private const string GET_RATE_EXCHANGES = "SELECT e.ExchangeRateId, e.Rate, " +
-            "a.CurrencyId as BaseCurrency, a.Code as bCode, a.FullName as bFullname, a.Sign as bSign," +
-            "b.CurrencyId as TargetCurrency, b.Code as tCode, b.FullName as tFullname, b.Sign as tSign " +
-            "FROM Currencies as a, Currencies as b, ExchangeRates as e " +
-            "WHERE BaseCurrency = (SELECT BaseCurrencyId FROM ExchangeRates WHERE ExchangeRateId = e.ExchangeRateId) " +
-            "AND TargetCurrency = (SELECT TargetCurrencyId FROM ExchangeRates WHERE ExchangeRateId = e.ExchangeRateId);";
+        private const string GET_RATE_EXCHANGES = @"
+            SELECT 
+                e.ExchangeRateId, e.Rate, 
+                a.CurrencyId as BaseCurrency, 
+                a.Code as bCode, 
+                a.FullName as bFullname, 
+                a.Sign as bSign, 
+                b.CurrencyId as TargetCurrency, 
+                b.Code as tCode, 
+                b.FullName as tFullname, 
+                b.Sign as tSign 
+            FROM Currencies as a, Currencies as b, ExchangeRates as e 
+            WHERE BaseCurrency = (
+                SELECT BaseCurrencyId FROM ExchangeRates 
+                WHERE ExchangeRateId = e.ExchangeRateId
+            ) AND TargetCurrency = (
+                SELECT TargetCurrencyId FROM ExchangeRates 
+                WHERE ExchangeRateId = e.ExchangeRateId
+            );";
 
-        private const string GET_RATE_EXCHANGE = "SELECT e.ExchangeRateId, e.Rate, " +
-            "a.CurrencyId as BaseCurrency, a.Code as bCode, a.FullName as bFullname, a.Sign as bSign," +
-            "b.CurrencyId as TargetCurrency, b.Code as tCode, b.FullName as tFullname, b.Sign as tSign " +
-            "FROM Currencies as a, Currencies as b, ExchangeRates as e " +
-            "WHERE BaseCurrency = (SELECT BaseCurrencyId FROM ExchangeRates WHERE ExchangeRateId = e.ExchangeRateId) " +
-            "AND TargetCurrency = (SELECT TargetCurrencyId FROM ExchangeRates WHERE ExchangeRateId = e.ExchangeRateId) " +
-            "AND a.Code = @FirstCode " +
-            "AND b.Code = @SecondCode;";
+        private const string GET_RATE_EXCHANGE = @"
+            SELECT 
+                e.ExchangeRateId, 
+                e.Rate, 
+                a.CurrencyId as BaseCurrency, 
+                a.Code as bCode, 
+                a.FullName as bFullname, 
+                a.Sign as bSign, 
+                b.CurrencyId as TargetCurrency, 
+                b.Code as tCode, 
+                b.FullName as tFullname, 
+                b.Sign as tSign 
+            FROM Currencies as a, Currencies as b, ExchangeRates as e 
+            WHERE BaseCurrency = (
+                SELECT BaseCurrencyId FROM ExchangeRates 
+                WHERE ExchangeRateId = e.ExchangeRateId
+            ) AND TargetCurrency = (
+                SELECT TargetCurrencyId FROM ExchangeRates 
+                WHERE ExchangeRateId = e.ExchangeRateId
+            ) AND a.Code = @FirstCode AND b.Code = @SecondCode;";
 
-        private const string INSERT_RATE_EXCHANGE = "INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate) " +
-            "VALUES (" +
-                "(SELECT CurrencyId FROM Currencies WHERE Code = @CurrentCode), " +
-                "(SELECT CurrencyId FROM Currencies WHERE Code = @TargetCode), " +
-                "@Rate);";
+        private const string INSERT_RATE_EXCHANGE = @"
+            INSERT INTO ExchangeRates (
+                BaseCurrencyId, 
+                TargetCurrencyId, 
+                Rate
+            ) VALUES (
+                (SELECT CurrencyId FROM Currencies WHERE Code = @CurrentCode), 
+                (SELECT CurrencyId FROM Currencies WHERE Code = @TargetCode), @Rate);";
 
-        private const string UPDATE_RATE = "UPDATE ExchangeRates SET Rate = @Rate WHERE Rate = (" +
-            "SELECT Rate FROM ExchangeRates " +
-            "WHERE BaseCurrencyId = (SELECT CurrencyId FROM Currencies WHERE Code = @CurrentCode) " +
-            "AND TargetCurrencyId = (SELECT CurrencyId FROM Currencies WHERE Code = @TargetCode));";
+        private const string UPDATE_RATE = @"
+            UPDATE ExchangeRates SET Rate = @Rate WHERE Rate = (
+                SELECT Rate FROM ExchangeRates WHERE BaseCurrencyId = (
+                    SELECT CurrencyId FROM Currencies WHERE Code = @CurrentCode
+                ) AND TargetCurrencyId = (
+                    SELECT CurrencyId FROM Currencies WHERE Code = @TargetCode)
+                );";
 
         public ExchangeRateRepository(DapperContext context)
         {
@@ -135,7 +166,7 @@ namespace CurrencyExchangesApi.Repositories
 
         public async Task Update(string currentCode, string targetCode, decimal rate)
         {
-            var parameter = new 
+            var parameters = new 
             {
                 CurrentCode = currentCode,
                 TargetCode = targetCode,
@@ -144,7 +175,7 @@ namespace CurrencyExchangesApi.Repositories
 
             using (var connection = new SQLiteConnection(_context.CreateSqliteConnection()))
             {
-                await connection.QueryAsync<ExchangeRate>(UPDATE_RATE, parameter);
+                await connection.QueryAsync<ExchangeRate>(UPDATE_RATE, parameters);
             }
         }
     }
