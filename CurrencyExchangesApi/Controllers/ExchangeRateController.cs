@@ -33,7 +33,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (codePair.Length != 6)
             {
-                return BadRequest();
+                return BadRequest( new { message = "Пара кодов передана неверно." } );
             }
 
             var response = await _service.GetExchangeRate(codePair);
@@ -45,7 +45,7 @@ namespace CurrencyExchangesApi.Controllers
 
             if (response.Data == null)
             {
-                return NotFound();
+                return NotFound( new { message = "Курс не найден." } );
             }
 
             return Ok(response.Data);
@@ -56,7 +56,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest( new { message = "Значения не переданы." } );
             }
 
             var response = await _service.CreateExchangeRate(createDto);
@@ -68,12 +68,12 @@ namespace CurrencyExchangesApi.Controllers
 
             if (response.Status == ServiceStatus.Conflict)
             {
-                return Conflict();
+                return Conflict(new { message = response.Message });
             }
 
             if (response.Status == ServiceStatus.NotFound)
             {
-                return NotFound( new { response.Message, response.Status } );
+                return NotFound( new { response.Message } );
             }
 
             return Ok(response.Data);
@@ -84,7 +84,12 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest( new { message = "Значения не переданы." } );
+            }
+
+            if (codePair.Length != 6)
+            {
+                return BadRequest( new { message = "Пара кодов передана неверно." } );
             }
 
             var response = await _service.UpdateExchangeRate(codePair, editDto);
@@ -96,7 +101,7 @@ namespace CurrencyExchangesApi.Controllers
 
             if (response.Status == ServiceStatus.NotFound)
             {
-                return NotFound();
+                return NotFound(new { message = response.Message });
             }
 
             return Ok(response.Data);
@@ -107,7 +112,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (baseCurrencyCode.Length != 3 || targetCurrencyCode.Length != 3)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Неверные коды валют." });
             }
 
             var response = await _service.GetCurrencyExchange(baseCurrencyCode, targetCurrencyCode, amount);
@@ -119,7 +124,7 @@ namespace CurrencyExchangesApi.Controllers
 
             if (response.Status == ServiceStatus.NotFound)
             {
-                return NotFound();
+                return NotFound(new { message = response.Message });
             }
 
             return Ok(response.Data);

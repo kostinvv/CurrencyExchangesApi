@@ -1,6 +1,5 @@
 ﻿using CurrencyExchangesApi.DTOs;
 using CurrencyExchangesApi.Enums;
-using CurrencyExchangesApi.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CurrencyExchangesApi.Controllers
@@ -34,7 +33,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (code.Length != 3)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Неверный код валюты." });
             }
 
             var response = await _service.GetCurrency(code);
@@ -46,7 +45,7 @@ namespace CurrencyExchangesApi.Controllers
 
             if (response.Data == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Валюта не найдена." });
             }
 
             return Ok(response.Data);
@@ -57,7 +56,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Значения не переданы." });
             }
 
             var response = await _service.CreateCurrency(currencyDto);

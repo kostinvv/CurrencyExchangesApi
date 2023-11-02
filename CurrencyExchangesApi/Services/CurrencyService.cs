@@ -31,7 +31,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<Currency>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[GetCurrency]: {ex.Message}",
                 };
             }
 
@@ -54,7 +54,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<IEnumerable<Currency>>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[GetCurrencies]: {ex.Message}",
                 };
             }
         }
@@ -70,6 +70,7 @@ namespace CurrencyExchangesApi.Services
                     return new Response<Currency>()
                     {
                         Status = ServiceStatus.Conflict,
+                        Message = "Валюта с таким кодом уже существует.",
                     };
                 }
 
@@ -95,7 +96,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<Currency>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[CreateCurrency]: {ex.Message}",
                 };
             }
         }

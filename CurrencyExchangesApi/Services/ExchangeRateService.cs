@@ -33,7 +33,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<IEnumerable<ExchangeRate>>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[GetExchangeRates]: {ex.Message}",
                 };
             }
         }
@@ -58,7 +58,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<ExchangeRate>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[GetExchangeRate]: {ex.Message}",
                 };
             }
         }
@@ -74,6 +74,7 @@ namespace CurrencyExchangesApi.Services
                     return new Response<ExchangeRate>()
                     {
                         Status = ServiceStatus.Conflict,
+                        Message = "Валютный курс уже существует.",
                     };
                 }
 
@@ -85,8 +86,8 @@ namespace CurrencyExchangesApi.Services
                 {
                     return new Response<ExchangeRate>()
                     {
-                        Message = $"Currency by code {createDto.BaseCurrencyCode} or {createDto.TargetCurrencyCode} not found.",
                         Status = ServiceStatus.NotFound,
+                        Message = $"Валюта с кодом {createDto.BaseCurrencyCode} или {createDto.TargetCurrencyCode} не найдена.",
                     };
                 }
 
@@ -105,7 +106,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<ExchangeRate>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[CreateExchangeRate]: {ex.Message}",
                 };
             }
         }
@@ -124,6 +125,7 @@ namespace CurrencyExchangesApi.Services
                     return new Response<ExchangeRate>()
                     {
                         Status = ServiceStatus.NotFound,
+                        Message = $"Валютный курс не найден.",
                     };
                 }
 
@@ -139,7 +141,7 @@ namespace CurrencyExchangesApi.Services
                 return new Response<ExchangeRate>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = ex.Message,
+                    Message = $"[UpdateExchangeRate]: {ex.Message}",
                 };
             }
         }
@@ -159,17 +161,17 @@ namespace CurrencyExchangesApi.Services
                         var crossExchangeRateBase = await _exchangeRepository.Get("USD", baseCurrencyCode);
                         var crossExchangeRateTarget = await _exchangeRepository.Get("USD", targetCurrencyCode);
 
-                        var baseCurrency = crossExchangeRateBase.TargetCurrency;
-                        var targetCurrency = crossExchangeRateTarget.TargetCurrency;
-
                         if (crossExchangeRateBase == null || crossExchangeRateTarget == null)
                         {
                             return new Response<GetCurrencyExchange>()
                             {
                                 Status = ServiceStatus.NotFound,
-                                Message = $"",
+                                Message = $"Валютные курсы не найдены.",
                             };
                         }
+
+                        var baseCurrency = crossExchangeRateBase.TargetCurrency;
+                        var targetCurrency = crossExchangeRateTarget.TargetCurrency;
 
                         // Кросс-курс.
                         var crossRate = crossExchangeRateTarget.Rate / crossExchangeRateBase.Rate;
