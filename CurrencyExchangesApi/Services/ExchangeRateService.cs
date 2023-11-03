@@ -146,79 +146,47 @@ namespace CurrencyExchangesApi.Services
             }
         }
 
-        public async Task<Response<GetCurrencyExchange>> GetCurrencyExchange(string baseCurrencyCode, string targetCurrencyCode, decimal amount)
+        public async Task<Response<GetCurrencyExchange>> ConvertCurrency(CurrencyExchangeDto currencyExchangeDto)
         {
             try
             {
-                var exchangeRate = await _exchangeRepository.Get(baseCurrencyCode, targetCurrencyCode);
+                var baseCurrencyCode = currencyExchangeDto.From;
+                var targetCurrencyCode = currencyExchangeDto.To;
+
+                var exchangeRate = await GetDirectExchangeRate(baseCurrencyCode, targetCurrencyCode);
 
                 if (exchangeRate == null)
                 {
-                    var reverseExchangeRate = await _exchangeRepository.Get(targetCurrencyCode, baseCurrencyCode);
+                    exchangeRate = await GetReverseExchangeRate(baseCurrencyCode, targetCurrencyCode);
+                }
 
-                    if (reverseExchangeRate == null)
-                    {
-                        var crossExchangeRateBase = await _exchangeRepository.Get("USD", baseCurrencyCode);
-                        var crossExchangeRateTarget = await _exchangeRepository.Get("USD", targetCurrencyCode);
+                if (exchangeRate == null)
+                {
+                    exchangeRate = await GetCrossExchangeRate(baseCurrencyCode, targetCurrencyCode);
+                }
 
-                        if (crossExchangeRateBase == null || crossExchangeRateTarget == null)
-                        {
-                            return new Response<GetCurrencyExchange>()
-                            {
-                                Status = ServiceStatus.NotFound,
-                                Message = $"Валютные курсы не найдены.",
-                            };
-                        }
-
-                        var baseCurrency = crossExchangeRateBase.TargetCurrency;
-                        var targetCurrency = crossExchangeRateTarget.TargetCurrency;
-
-                        // Кросс-курс.
-                        var crossRate = crossExchangeRateTarget.Rate / crossExchangeRateBase.Rate;
-
-                        return new Response<GetCurrencyExchange>()
-                        {
-                            Data = new GetCurrencyExchange()
-                            {
-                                BaseCurrency = baseCurrency,
-                                TargetCurrency = targetCurrency,
-                                Amount = amount,
-                                Rate = decimal.Round(crossRate, 6),
-                                ConvertedAmount = decimal.Round(amount * crossRate, 2),
-                            },
-                            Status = ServiceStatus.Success,
-                        };
-                    }
-
-                    // Обратная котировка.
-                    var rate = 1 / reverseExchangeRate.Rate;
-
+                if (exchangeRate == null)
+                {
                     return new Response<GetCurrencyExchange>()
                     {
-                        Data = new GetCurrencyExchange()
-                        {
-                            BaseCurrency = reverseExchangeRate.BaseCurrency,
-                            TargetCurrency = reverseExchangeRate.TargetCurrency,
-                            Amount = amount,
-                            Rate = decimal.Round(rate, 6),
-                            ConvertedAmount = decimal.Round(rate * amount, 2),
-                        },
-                        Status = ServiceStatus.Success,
+                        Status = ServiceStatus.NotFound,
+                        Message = $"Валютные курсы не найдены.",
                     };
                 }
 
-                // Расчет по прямому курсу base currency и target currency.
-                return new Response<GetCurrencyExchange>
+                var convertedAmount = currencyExchangeDto.Amount * exchangeRate.Rate;
+
+                return new Response<GetCurrencyExchange>()
                 {
-                    Data = new GetCurrencyExchange()
+                    Status = ServiceStatus.Success,
+                    Data = new GetCurrencyExchange
                     {
                         BaseCurrency = exchangeRate.BaseCurrency,
                         TargetCurrency = exchangeRate.TargetCurrency,
-                        Amount = amount,
-                        Rate = exchangeRate.Rate,
-                        ConvertedAmount = decimal.Round(amount * exchangeRate.Rate, 2),
+                        Rate = decimal.Round(exchangeRate.Rate, 6),
+                        Amount = currencyExchangeDto.Amount,
+                        ConvertedAmount = decimal.Round(convertedAmount, 2),
                     },
-                    Status = ServiceStatus.Success,
                 };
             }
             catch (Exception ex)
@@ -226,9 +194,48 @@ namespace CurrencyExchangesApi.Services
                 return new Response<GetCurrencyExchange>()
                 {
                     Status = ServiceStatus.ServerError,
-                    Message = $"[GetCurrencyExchange]: {ex.Message}",
+                    Message = $"[ConvertCurrency]: {ex.Message}",
                 };
             }
+        }
+
+        private async Task<ExchangeRate> GetDirectExchangeRate(string baseCurrencyCode, string targetCurrencyCode) 
+            => await _exchangeRepository.Get(baseCurrencyCode, targetCurrencyCode);
+
+        private async Task<ExchangeRate> GetReverseExchangeRate(string baseCurrencyCode, string targetCurrencyCode)
+        {
+            var exchangeRate = await _exchangeRepository.Get(targetCurrencyCode, baseCurrencyCode);
+
+            if (exchangeRate == null) return null!;
+
+            var reverseRate = 1 / exchangeRate.Rate;
+
+            return new ExchangeRate
+            {
+               BaseCurrency = exchangeRate.BaseCurrency,
+               TargetCurrency = exchangeRate.TargetCurrency,
+               Rate = reverseRate,
+            };
+        }
+
+        private async Task<ExchangeRate> GetCrossExchangeRate(string baseCurrencyCode, string targetCurrencyCode)
+        {
+            var usdToBase = await _exchangeRepository.Get("USD", baseCurrencyCode);
+            var usdToTarget = await _exchangeRepository.Get("USD", targetCurrencyCode);
+
+            if (usdToBase == null || usdToTarget == null) return null!;
+
+            var crossRate = usdToBase.Rate / usdToTarget.Rate;
+
+            var baseCurrency = usdToBase.TargetCurrency;
+            var targetCurrency = usdToTarget.TargetCurrency;
+
+            return new ExchangeRate
+            {
+                BaseCurrency = baseCurrency,
+                TargetCurrency = targetCurrency,
+                Rate = crossRate,
+            };
         }
     }
 }

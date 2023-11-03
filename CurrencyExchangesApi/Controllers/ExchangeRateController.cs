@@ -108,14 +108,14 @@ namespace CurrencyExchangesApi.Controllers
         }
 
         [HttpGet("exchange")]
-        public async Task<IActionResult> Get(string baseCurrencyCode, string targetCurrencyCode, decimal amount)
+        public async Task<IActionResult> Get([FromQuery] CurrencyExchangeDto currencyExchange)
         {
-            if (baseCurrencyCode.Length != 3 || targetCurrencyCode.Length != 3)
+            if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Неверные коды валют." });
+                return BadRequest(new { message = "Значения не переданы." });
             }
 
-            var response = await _service.GetCurrencyExchange(baseCurrencyCode, targetCurrencyCode, amount);
+            var response = await _service.ConvertCurrency(currencyExchange);
 
             if (response.Status == ServiceStatus.ServerError)
             {
