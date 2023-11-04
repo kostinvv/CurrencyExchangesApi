@@ -52,7 +52,7 @@ namespace CurrencyExchangesApi.Controllers
         }
 
         [HttpPost("exchangeRates")]
-        public async Task<IActionResult> Create([FromBody] CreateExchangeRate createDto)
+        public async Task<IActionResult> Create([FromForm] CreateExchangeRate createDto)
         {
             if (!ModelState.IsValid)
             {
@@ -80,7 +80,7 @@ namespace CurrencyExchangesApi.Controllers
         }
 
         [HttpPatch("exchangeRate/codePair")]
-        public async Task<IActionResult> Update(string codePair, [FromBody] EditExchageRate editDto)
+        public async Task<IActionResult> Update([FromQuery] string codePair, [FromForm] EditExchageRate editDto)
         {
             if (!ModelState.IsValid)
             {

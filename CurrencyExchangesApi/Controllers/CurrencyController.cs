@@ -52,7 +52,7 @@ namespace CurrencyExchangesApi.Controllers
         }
 
         [HttpPost("currencies")]
-        public async Task<IActionResult> Create([FromBody] CreateCurrency currencyDto)
+        public async Task<IActionResult> Create([FromForm] CreateCurrency currencyDto)
         {
             if (!ModelState.IsValid)
             {
