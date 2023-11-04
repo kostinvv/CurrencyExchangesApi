@@ -1,5 +1,4 @@
 ﻿using CurrencyExchangesApi.Models;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CurrencyExchangesApi.DTOs
 {

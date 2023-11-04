@@ -28,7 +28,7 @@ namespace CurrencyExchangesApi.Controllers
             return Ok(response.Data);
         }
 
-        [HttpGet("exchangeRates/codePair")]
+        [HttpGet("exchangeRates/{codePair}")]
         public async Task<IActionResult> Get(string codePair)
         {
             if (codePair.Length != 6)
@@ -56,7 +56,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest( new { message = "Значения не переданы." } );
+                return BadRequest();
             }
 
             var response = await _service.CreateExchangeRate(createDto);
@@ -79,12 +79,12 @@ namespace CurrencyExchangesApi.Controllers
             return Ok(response.Data);
         }
 
-        [HttpPatch("exchangeRate/codePair")]
-        public async Task<IActionResult> Update([FromQuery] string codePair, [FromForm] EditExchageRate editDto)
+        [HttpPatch("exchangeRate/{codePair}")]
+        public async Task<IActionResult> Update(string codePair, [FromForm] EditExchageRate editDto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest( new { message = "Значения не переданы." } );
+                return BadRequest();
             }
 
             if (codePair.Length != 6)
@@ -112,7 +112,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Значения не переданы." });
+                return BadRequest();
             }
 
             var response = await _service.ConvertCurrency(currencyExchange);

@@ -56,7 +56,7 @@ namespace CurrencyExchangesApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Значения не переданы." });
+                return BadRequest();
             }
 
             var response = await _service.CreateCurrency(currencyDto);

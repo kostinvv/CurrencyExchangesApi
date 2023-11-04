@@ -77,7 +77,7 @@ namespace CurrencyExchangesApi.Services
                 var newCurrency = new Currency
                 {
                     Code = currencyDto.Code,
-                    FullName = currencyDto.FullName,
+                    FullName = currencyDto.Name,
                     Sign = currencyDto.Sign,
                 };
 
