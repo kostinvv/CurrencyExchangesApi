@@ -7,6 +7,8 @@ builder.Services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<ExchangeRateService>();
 
+builder.Services.AddCors();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -19,6 +21,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(builder => builder.AllowAnyOrigin());
 
 app.UseAuthorization();
 
